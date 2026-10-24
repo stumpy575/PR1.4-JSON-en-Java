@@ -1,16 +1,25 @@
 package com.project.pr14;
 
-import com.project.objectes.Llibre;
-import jakarta.json.*;
-import jakarta.json.stream.JsonGenerator;
-
-import java.io.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+import java.io.Writer;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
+
+import com.project.objectes.Llibre;
+
+import jakarta.json.Json;
+import jakarta.json.JsonArray;
+import jakarta.json.JsonArrayBuilder;
+import jakarta.json.JsonException;
+import jakarta.json.JsonObject;
+import jakarta.json.JsonReader;
+import jakarta.json.JsonValue;
+import jakarta.json.JsonWriter;
 
 /**
  * Classe principal que gestiona la lectura i el processament de fitxers JSON per obtenir dades de llibres
@@ -56,8 +65,18 @@ public class PR14GestioLlibreriaJakartaMain {
      * @return Llista de llibres o null si hi ha hagut un error en la lectura.
      */
     public List<Llibre> carregarLlibres() {
-        // *************** CODI PRÀCTICA **********************/
-        return null; // Substitueix pel teu
+        try (JsonReader jsonReader = Json.createReader(new FileReader(dataFile))) {
+            JsonArray llibresArray = jsonReader.readArray();
+            List<Llibre> llibres = new ArrayList<>();
+            for (JsonValue valor : llibresArray) {
+                JsonObject llibre = valor.asJsonObject();
+                llibres.add(new Llibre(llibre.getInt("id"), llibre.getString("titol"), llibre.getString("autor"), llibre.getInt("any")  ));
+            }  
+            return llibres;
+        } catch (Exception e) {
+            System.err.println("Error en carregar els llibres: " + e.getMessage());
+            return null;
+        }
     }
 
     /**
@@ -68,7 +87,13 @@ public class PR14GestioLlibreriaJakartaMain {
      * @param nouAny Nou any de publicació.
      */
     public void modificarAnyPublicacio(List<Llibre> llibres, int id, int nouAny) {
-        // *************** CODI PRÀCTICA **********************/
+        for (int i = 0; i < llibres.size(); i++) {
+            Llibre llibre = llibres.get(i);
+            if (llibre.getId() == id) {
+                llibres.set(i, new Llibre(llibre.getId(), llibre.getTitol(), llibre.getAutor(), nouAny));
+                break;
+            }
+        }
     }
 
     /**
@@ -78,7 +103,7 @@ public class PR14GestioLlibreriaJakartaMain {
      * @param nouLlibre Nou llibre a afegir.
      */
     public void afegirNouLlibre(List<Llibre> llibres, Llibre nouLlibre) {
-        // *************** CODI PRÀCTICA **********************/
+llibres.add(nouLlibre); 
     }
 
     /**
@@ -88,7 +113,7 @@ public class PR14GestioLlibreriaJakartaMain {
      * @param id Identificador del llibre a esborrar.
      */
     public void esborrarLlibre(List<Llibre> llibres, int id) {
-        // *************** CODI PRÀCTICA **********************/
+llibres.removeIf(llibre -> llibre.getId() == id);  
     }
 
     /**
@@ -98,6 +123,22 @@ public class PR14GestioLlibreriaJakartaMain {
      * @param llibres Llista de llibres a guardar.
      */
     public void guardarLlibres(List<Llibre> llibres) {
-        // *************** CODI PRÀCTICA **********************/
+JsonArrayBuilder arrayBuilder = Json.createArrayBuilder();
+        for (Llibre llibre : llibres) {
+            JsonObject llibreJson = Json.createObjectBuilder()
+                .add("id", llibre.getId())
+                .add("titol", llibre.getTitol())
+                .add("autor", llibre.getAutor())
+                .add("any", llibre.getAny())
+                .build();
+            arrayBuilder.add(llibreJson);
+        }
+        JsonArray jsonArray = arrayBuilder.build();
+        try (Writer writer = Files.newBufferedWriter(Paths.get(dataFile.getParent(), "llibres_output_jakarta.json"), StandardCharsets.UTF_8);
+             JsonWriter jsonWriter = Json.createWriter(writer)) {
+            jsonWriter.writeArray(jsonArray);
+        } catch (IOException | JsonException e) {
+            System.err.println("Error en guardar els llibres: " + e.getMessage());
+        }
     }
 }

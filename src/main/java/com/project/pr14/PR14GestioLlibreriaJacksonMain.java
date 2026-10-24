@@ -1,20 +1,22 @@
 package com.project.pr14;
 
+import java.io.File;
+import java.util.List;
+
 import com.project.objectes.Llibre;
+
 import tools.jackson.core.JacksonException;
 import tools.jackson.core.type.TypeReference;
 import tools.jackson.databind.json.JsonMapper;
 
-import java.io.File;
-import java.util.List;
-
 /**
- * Classe principal que gestiona la lectura i el processament de fitxers JSON per obtenir dades de llibres
- * utilitzant Jackson 3.
+ * Classe principal que gestiona la lectura i el processament de fitxers JSON
+ * per obtenir dades de llibres utilitzant Jackson 3.
  */
 public class PR14GestioLlibreriaJacksonMain {
 
     private final File dataFile;
+    private final JsonMapper mapper = JsonMapper.builder().build();
 
     /**
      * Constructor de la classe PR14GestioLlibreriaJacksonMain.
@@ -32,7 +34,8 @@ public class PR14GestioLlibreriaJacksonMain {
     }
 
     /**
-     * Processa el fitxer JSON per carregar, modificar, afegir, esborrar i guardar les dades dels llibres.
+     * Processa el fitxer JSON per carregar, modificar, afegir, esborrar i
+     * guardar les dades dels llibres.
      */
     public void processarFitxer() {
         List<Llibre> llibres = carregarLlibres();
@@ -45,15 +48,20 @@ public class PR14GestioLlibreriaJacksonMain {
     }
 
     /**
-     * Carrega els llibres des del fitxer JSON.
-     * Si el fitxer no existeix o no conté un JSON vàlid, mostra un missatge d'error i retorna null
-     * (no ha de propagar cap excepció).
+     * Carrega els llibres des del fitxer JSON. Si el fitxer no existeix o no
+     * conté un JSON vàlid, mostra un missatge d'error i retorna null (no ha de
+     * propagar cap excepció).
      *
      * @return Llista de llibres o null si hi ha hagut un error en la lectura.
      */
     public List<Llibre> carregarLlibres() {
-        // *************** CODI PRÀCTICA **********************/
-        return null; // Substitueix pel teu
+        try {
+            return mapper.readValue(dataFile, new TypeReference<List<Llibre>>() {
+            });
+        } catch (JacksonException e) {
+            System.err.println("Error en llegir " + dataFile.getName() + ": " + e.getOriginalMessage());
+            return null;
+        }
     }
 
     /**
@@ -64,7 +72,13 @@ public class PR14GestioLlibreriaJacksonMain {
      * @param nouAny Nou any de publicació.
      */
     public void modificarAnyPublicacio(List<Llibre> llibres, int id, int nouAny) {
-        // *************** CODI PRÀCTICA **********************/
+        for (int i = 0; i < llibres.size(); i++) {
+            Llibre llibre = llibres.get(i);
+            if (llibre.getId() == id) {
+                llibres.set(i, new Llibre(llibre.getId(), llibre.getTitol(), llibre.getAutor(), nouAny));
+                break;
+            }
+        }
     }
 
     /**
@@ -74,7 +88,7 @@ public class PR14GestioLlibreriaJacksonMain {
      * @param nouLlibre Nou llibre a afegir.
      */
     public void afegirNouLlibre(List<Llibre> llibres, Llibre nouLlibre) {
-        // *************** CODI PRÀCTICA **********************/
+        llibres.add(nouLlibre);
     }
 
     /**
@@ -84,16 +98,22 @@ public class PR14GestioLlibreriaJacksonMain {
      * @param id Identificador del llibre a esborrar.
      */
     public void esborrarLlibre(List<Llibre> llibres, int id) {
-        // *************** CODI PRÀCTICA **********************/
+        llibres.removeIf(llibre -> llibre.getId() == id);
     }
 
     /**
-     * Guarda la llista de llibres en un fitxer nou anomenat llibres_output_jackson.json,
-     * dins del mateix directori que el fitxer d'entrada.
+     * Guarda la llista de llibres en un fitxer nou anomenat
+     * llibres_output_jackson.json, dins del mateix directori que el fitxer
+     * d'entrada.
      *
      * @param llibres Llista de llibres a guardar.
      */
     public void guardarLlibres(List<Llibre> llibres) {
-        // *************** CODI PRÀCTICA **********************/
+        File outputFile = new File(dataFile.getParent(), "llibres_output_jackson.json");
+        try {
+            mapper.writerWithDefaultPrettyPrinter().writeValue(outputFile, llibres);
+        } catch (JacksonException e) {
+            System.err.println("Error en guardar " + outputFile.getName() + ": " + e.getOriginalMessage());
+        }
     }
 }
